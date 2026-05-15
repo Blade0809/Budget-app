@@ -1,41 +1,51 @@
-// SELECT CHART ELEMENT
-const chartEl = document.querySelector(".chart");
+let ctx;
+let canvas;
 
-// CREATE CANVAS ELEMENT
-const canvas = document.createElement("canvas");
-canvas.width = 50;
-canvas.height = 50;
+export function initChart(chartEl) {
+  if (!chartEl) return;
 
-chartEl.appendChild(canvas);
+  canvas = document.createElement("canvas");
+  canvas.width = 50;
+  canvas.height = 50;
+  canvas.setAttribute("aria-hidden", "true");
 
-// TO DRAW ON CANVAS, WE NEED TO GET CONTEXT OF CANVAS
-const ctx = canvas.getContext("2d");
+  chartEl.innerHTML = "";
+  chartEl.appendChild(canvas);
 
-// CHANGE LINE WIDTH
-ctx.lineWidth = 8;
+  ctx = canvas.getContext("2d");
+  if (!ctx) return;
 
-// CIRCLE RADIUS
-const R = 20;
+  ctx.lineWidth = 8;
+}
+
+export function updateChart(income, expense) {
+  if (!ctx || !canvas) return;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (income === 0 && expense === 0) {
+    drawCircle("#d8d1df", 1, false);
+    return;
+  }
+
+  const ratio = income / (expense + income);
+  drawCircle("#ffffff", -ratio, true);
+  drawCircle("#f0624d", 1 - ratio, false);
+}
 
 function drawCircle(color, ratio, anticlockwise) {
+  if (!ctx || !canvas) return;
+
+  const radius = 20;
   ctx.strokeStyle = color;
   ctx.beginPath();
   ctx.arc(
     canvas.width / 2,
     canvas.height / 2,
-    R,
+    radius,
     0,
     ratio * 2 * Math.PI,
     anticlockwise
   );
   ctx.stroke();
-}
-
-function updateChart(income, outcome) {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  let ratio = income / (outcome + income);
-
-  drawCircle("#FFF", -ratio, true);
-  drawCircle("#F0624D", 1 - ratio, false);
 }

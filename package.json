@@ -1,0 +1,18 @@
+{
+  "name": "budget-app-coursework-enhancement",
+  "version": "1.0.0",
+  "description": "A vanilla JavaScript budget app enhanced for CPT304 Software Engineering 2 coursework.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "test": "vitest run",
+    "coverage": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.6",
+    "vite": "^8.0.13",
+    "vitest": "^4.1.6"
+  }
+}

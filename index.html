@@ -4,80 +4,143 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Budget Web App | javascript</title>
+    <title>Budget App</title>
     <link href="./style.css" rel="stylesheet" type="text/css" />
   </head>
   <body>
     <div class="budget-container">
-      <div class="app-title">
-        <a href="">Budget<b>App</b></a>
-      </div>
-      <div class="budget-header">
-        <div class="balance">
-          <div class="title">Balance</div>
-          <div class="value"><small>$</small>0</div>
+      <header class="app-header">
+        <a class="app-title" href="./index.html" data-i18n="appName">Budget App</a>
+        <div class="language-control">
+          <label for="language-select" data-i18n="languageLabel">Language</label>
+          <select id="language-select">
+            <option value="en">English</option>
+            <option value="zh">中文</option>
+          </select>
         </div>
-        <div class="account">
-          <div class="income">
-            <div class="title">Income</div>
-            <div class="income-total"><small>$</small>0</div>
+      </header>
+
+      <main>
+        <section class="budget-header" aria-labelledby="summary-title">
+          <h1 id="summary-title" class="sr-only" data-i18n="dashboard">Dashboard</h1>
+          <div class="balance">
+            <div class="title" data-i18n="balance">Balance</div>
+            <div class="value" data-balance-value>$0.00</div>
           </div>
-          <div class="chart"></div>
-          <div class="outcome">
-            <div class="title">Outcome</div>
-            <div class="outcome-total"><small>$</small>0</div>
+          <div class="account">
+            <div class="income">
+              <div class="title" data-i18n="income">Income</div>
+              <div class="income-total" data-income-total>$0.00</div>
+            </div>
+            <div class="chart" aria-hidden="true"></div>
+            <div class="outcome">
+              <div class="title" data-i18n="outcome">Outcome</div>
+              <div class="outcome-total" data-expense-total>$0.00</div>
+            </div>
           </div>
-        </div>
-      </div>
-      <div class="budget-dashboard">
-        <div class="dash-title">Dashboard</div>
-        <div class="toggle">
-          <div class="first-tab">Expenses</div>
-          <div class="second-tab">Income</div>
-          <div class="third-tab focus">All</div>
-        </div>
-        <div class="hide" id="expense">
-          <ul class="list"></ul>
-          <div class="input">
-            <input
-              type="text"
-              id="expense-title-input"
-              name="title"
-              placeholder="title"
-            />
-            <input
-              type="number"
-              id="expense-amount-input"
-              name="amount"
-              placeholder="$0"
-            />
-            <div class="add-expense"><img src="icon/plus.png" alt="+" /></div>
+        </section>
+
+        <section class="budget-dashboard" aria-labelledby="dashboard-title">
+          <h2 id="dashboard-title" class="dash-title" data-i18n="dashboard">Dashboard</h2>
+          <p id="form-error" class="form-error" role="alert"></p>
+          <p id="status-message" class="sr-only" aria-live="polite"></p>
+
+          <div class="toggle" role="tablist" aria-label="Transaction views">
+            <button class="first-tab" type="button" role="tab" data-tab-target="expense" data-i18n="expenses">
+              Expenses
+            </button>
+            <button class="second-tab" type="button" role="tab" data-tab-target="income" data-i18n="income">
+              Income
+            </button>
+            <button
+              class="third-tab focus"
+              type="button"
+              role="tab"
+              aria-selected="true"
+              data-tab-target="all"
+              data-i18n="all"
+            >
+              All
+            </button>
           </div>
-        </div>
-        <div class="hide" id="income">
-          <ul class="list"></ul>
-          <div class="input">
-            <input
-              type="text"
-              id="income-title-input"
-              name="title"
-              placeholder="title"
-            />
-            <input
-              type="number"
-              id="income-amount-input"
-              name="amount"
-              placeholder="$0"
-            />
-            <div class="add-income"><img src="icon/plus.png" alt="+" /></div>
+
+          <div class="hide" id="expense" role="tabpanel">
+            <ul class="list" aria-label="Expense transactions"></ul>
+            <form class="input" data-transaction-form="expense">
+              <label class="sr-only" for="expense-title-input" data-i18n="title">Title</label>
+              <input
+                type="text"
+                id="expense-title-input"
+                name="title"
+                autocomplete="off"
+                data-i18n-placeholder="title"
+                placeholder="Title"
+              />
+              <label class="sr-only" for="expense-amount-input" data-i18n="amount">Amount</label>
+              <input
+                type="number"
+                id="expense-amount-input"
+                name="amount"
+                min="0.01"
+                step="0.01"
+                inputmode="decimal"
+                data-i18n-placeholder="amount"
+                placeholder="Amount"
+              />
+              <button class="add-expense icon-add-button" type="submit" data-i18n-label="addExpense">
+                <img src="icon/plus.png" alt="" aria-hidden="true" />
+              </button>
+            </form>
           </div>
-        </div>
-        <div id="all">
-          <ul class="list"></ul>
-        </div>
-      </div>
+
+          <div class="hide" id="income" role="tabpanel">
+            <ul class="list" aria-label="Income transactions"></ul>
+            <form class="input" data-transaction-form="income">
+              <label class="sr-only" for="income-title-input" data-i18n="title">Title</label>
+              <input
+                type="text"
+                id="income-title-input"
+                name="title"
+                autocomplete="off"
+                data-i18n-placeholder="title"
+                placeholder="Title"
+              />
+              <label class="sr-only" for="income-amount-input" data-i18n="amount">Amount</label>
+              <input
+                type="number"
+                id="income-amount-input"
+                name="amount"
+                min="0.01"
+                step="0.01"
+                inputmode="decimal"
+                data-i18n-placeholder="amount"
+                placeholder="Amount"
+              />
+              <button class="add-income icon-add-button" type="submit" data-i18n-label="addIncome">
+                <img src="icon/plus.png" alt="" aria-hidden="true" />
+              </button>
+            </form>
+          </div>
+
+          <div id="all" role="tabpanel">
+            <ul class="list" aria-label="All transactions"></ul>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <a href="./privacy.html" data-i18n="privacyPolicy">Privacy Policy</a>
+      </footer>
     </div>
-    <script src="./chart.js"></script>
-    <script src="./budget.js"></script>
+
+    <aside id="cookie-banner" class="cookie-banner hide" aria-label="Cookie notice">
+      <p data-i18n="cookieMessage">
+        This student budget app stores transactions, language choice, and cookie consent in your browser only.
+      </p>
+      <a href="./privacy.html" data-i18n="privacyPolicy">Privacy Policy</a>
+      <button id="accept-cookies" type="button" data-i18n="cookieAccept">Accept</button>
+    </aside>
+
+    <script type="module" src="/budget.js"></script>
   </body>
 </html>

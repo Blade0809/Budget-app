@@ -1,48 +1,76 @@
-# Budget-App-JavaScript
+# Budget App Coursework Enhancement
 
-Welcome to the Budget App! This project is the result of following a comprehensive YouTube tutorial that guides you through building a budget management application from scratch. With this app, you can efficiently track your income, expenses, and overall budget, gaining better control of your financial situation.
-
-## Demo
-You can check out the live demo of the Budget App here.
-**Online Demo of Project :**
-
-<a href="https://smircodes.github.io/Budget-app/" title="Budget-App">Link to Budget App</a>
+This is a vanilla HTML/CSS/JavaScript budget management app enhanced for CPT304 Software Engineering 2. It keeps the original income, expense, balance, list, edit, delete, and chart workflow, while adding maintainability, accessibility, privacy, persistence, internationalisation, and automated tests.
 
 ## Features
 
-- Income and Expense Tracking: The Budget App allows you to enter your sources of income and expenses, categorizing them for better organization.
+- Add, edit, and delete income and expense transactions.
+- Calculates total income, total expense, and current balance.
+- Keeps the existing canvas chart summary.
+- Persists budget records in browser localStorage with damaged-data fallback.
+- English and Chinese language switching with saved preference.
+- Accessible form labels, inline validation errors, keyboard-friendly buttons, and aria-live updates.
+- Cookie banner with saved consent and a standalone privacy policy page.
+- Vitest unit tests with coverage reporting.
 
-- Budget Calculation: Based on the provided income and expenses, the app calculates your budget by subtracting expenses from income, giving you a clear overview of your financial status.
+## Install
 
-- Monthly Reports: Get a comprehensive monthly report that summarizes your income, expenses, and the resulting budget. This helps you understand your spending patterns over time.
+```bash
+npm install
+```
 
-- Simple and Intuitive Interface: The app boasts a user-friendly interface, making it easy for anyone to navigate and use, even if you have little to no prior experience with budgeting applications.
+## Run Locally
 
-## Usage
-1. Clone the repository or download the ZIP file.
+```bash
+npm run dev
+```
 
-1. Open the project in your preferred code editor.
+Open the local Vite URL shown in the terminal.
 
-1. Launch the index.html file in your browser to run the Budget App locally.
+## Run Tests
 
-1. Start by adding your income and expenses to track your budget. The app will automatically calculate your available budget.
+```bash
+npm run test
+```
 
-1. Monitor your budget regularly and adjust your spending to achieve your financial goals.
+## Generate Coverage
 
-## Technologies Used
-The Budget App was built using the following technologies and tools:
+```bash
+npm run coverage
+```
 
-- HTML5
-- CSS3
-- JavaScript
+The HTML coverage report is generated in `coverage/index.html`.
 
-## Credits
-The Budget App tutorial was created by [aaramiss](https://samiraatech.github.io/Budget-app/).
+## Build
 
-## License
-The Budget App is released under the MIT License. You are free to use, modify, and distribute this project for personal and commercial purposes.
+```bash
+npm run build
+```
 
-## Feedback and Support
-If you have any questions, suggestions, or issues with the Budget App, feel free to reach out by creating an issue in the [GitHub repository]([url](https://github.com/aaramiss/Budget-app/issues)). We welcome any feedback to improve the app and make it even more useful for managing personal finances.
+The static production build is generated in `dist/`.
 
-Happy budgeting!
+## Preview Build
+
+```bash
+npm run preview
+```
+
+## Deployment on Vercel
+
+1. Push the repository to GitHub.
+2. Go to Vercel and create a New Project.
+3. Import the GitHub repository.
+4. Use the following settings:
+   - Framework Preset: Vite
+   - Install Command: `npm install`
+   - Build Command: `npm run build`
+   - Output Directory: `dist`
+5. Click Deploy.
+6. After deployment, copy the production URL into `live-url.txt`.
+7. Keep the deployment live for at least 7 consecutive days and capture the Vercel deployment/uptime evidence for the coursework report.
+
+Vercel can auto-detect this as a Vite project from `package.json`, so a separate `vercel.json` is not required.
+
+## Coursework Evidence
+
+See `docs/deficiency-notes.md` for four suggested deficiency write-ups and Before vs. After code locations.

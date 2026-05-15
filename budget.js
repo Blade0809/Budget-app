@@ -1,202 +1,273 @@
-//SELECT ELEMENTS
-const balanceEl = document.querySelector(".balance .value");
-const incomeTotalEl = document.querySelector(".income-total");
-const outcomeTotalEl = document.querySelector(".outcome-total");
-const incomeEl = document.querySelector("#income");
-const expenseEl = document.querySelector("#expense");
-const allEl = document.querySelector("#all");
-const incomeList = document.querySelector("#income .list");
-const expenseList = document.querySelector("#expense .list");
-const allList = document.querySelector("#all .list");
+import {
+  addTransaction,
+  calculateTotals,
+  createTransaction,
+  formatCurrency,
+  removeTransaction,
+} from "./src/budgetCore.js";
+import { t } from "./src/i18n.js";
+import {
+  hasCookieConsent,
+  loadLanguage,
+  loadTransactions,
+  saveCookieConsent,
+  saveLanguage,
+  saveTransactions,
+} from "./src/storage.js";
+import { initChart, updateChart } from "./chart.js";
 
-//SELECT BUTTONS
-const expenseBtn = document.querySelector(".first-tab");
-const incomeBtn = document.querySelector(".second-tab");
-const allBtn = document.querySelector(".third-tab");
+const state = {
+  transactions: loadTransactions(),
+  language: loadLanguage(),
+  editingId: null,
+};
 
-//INPUT BTS
-const addExpense = document.querySelector(".add-expense");
-const expenseTitle = document.getElementById("expense-title-input");
-const expenseAmount = document.getElementById("expense-amount-input");
+const els = {
+  balance: document.querySelector("[data-balance-value]"),
+  incomeTotal: document.querySelector("[data-income-total]"),
+  expenseTotal: document.querySelector("[data-expense-total]"),
+  incomePanel: document.querySelector("#income"),
+  expensePanel: document.querySelector("#expense"),
+  allPanel: document.querySelector("#all"),
+  incomeList: document.querySelector("#income .list"),
+  expenseList: document.querySelector("#expense .list"),
+  allList: document.querySelector("#all .list"),
+  tabButtons: document.querySelectorAll("[data-tab-target]"),
+  forms: document.querySelectorAll("[data-transaction-form]"),
+  languageSelect: document.querySelector("#language-select"),
+  liveRegion: document.querySelector("#status-message"),
+  errorRegion: document.querySelector("#form-error"),
+  chart: document.querySelector(".chart"),
+  cookieBanner: document.querySelector("#cookie-banner"),
+  acceptCookies: document.querySelector("#accept-cookies"),
+};
 
-const addIncome = document.querySelector(".add-income");
-const incomeTitle = document.getElementById("income-title-input");
-const incomeAmount = document.getElementById("income-amount-input");
+init();
 
-//VARIABLES
-let ENTRY_LIST;
-let balance = 0,
-  income = 0,
-  outcome = 0;
-const DELETE = "delete",
-  EDIT = "edit";
+function init() {
+  if (!els.balance || !els.incomeTotal || !els.expenseTotal) return;
 
-// LOOK IF THERE IS DATA IN LOCAL STORAGE
-ENTRY_LIST = JSON.parse(localStorage.getItem("entry_list")) || [];
-updateUI();
+  initChart(els.chart);
+  bindEvents();
+  applyLanguage();
+  render();
+  setupCookieBanner();
+}
 
-//EVENT LISTENERS
-expenseBtn.addEventListener("click", function () {
-  show(expenseEl);
-  hide([incomeEl, allEl]);
-  active(expenseBtn);
-  inactive([incomeBtn, allBtn]);
-});
-incomeBtn.addEventListener("click", function () {
-  show(incomeEl);
-  hide([expenseEl, allEl]);
-  active(incomeBtn);
-  inactive([expenseBtn, allBtn]);
-});
-allBtn.addEventListener("click", function () {
-  show(allEl);
-  hide([incomeEl, expenseEl]);
-  active(allBtn);
-  inactive([incomeBtn, expenseBtn]);
-});
+function bindEvents() {
+  els.tabButtons.forEach((button) => {
+    button.addEventListener("click", () => showPanel(button.dataset.tabTarget));
+  });
 
-addExpense.addEventListener("click", function () {
-  // CHECK IF ONE OF THE INPUT IS EMPTY => EXIT
-  if (!expenseTitle.value || !expenseAmount.value) return;
+  els.forms.forEach((form) => {
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      handleSubmit(form.dataset.transactionForm);
+    });
+  });
 
-  // ADD INPUTs TO ENTRY_LIST
-  let expense = {
-    type: "expense",
-    title: expenseTitle.value,
-    amount: +expenseAmount.value,
-  };
-  ENTRY_LIST.push(expense);
+  [els.incomeList, els.expenseList, els.allList].forEach((list) => {
+    list?.addEventListener("click", handleListAction);
+  });
 
-  updateUI();
-  clearInput([expenseTitle, expenseAmount]);
-});
+  els.languageSelect?.addEventListener("change", (event) => {
+    state.language = event.target.value;
+    saveLanguage(state.language);
+    applyLanguage();
+    render();
+  });
 
-addIncome.addEventListener("click", function () {
-  // CHECK IF ONE OF THE INPUT IS EMPTY => EXIT
-  if (!incomeTitle.value || !incomeAmount.value) return;
+  els.acceptCookies?.addEventListener("click", () => {
+    saveCookieConsent();
+    els.cookieBanner?.classList.add("hide");
+  });
+}
 
-  // ADD INPUTs TO ENTRY_LIST
-  let income = {
-    type: "income",
-    title: incomeTitle.value,
-    amount: +incomeAmount.value,
-  };
-  ENTRY_LIST.push(income);
+function handleSubmit(type) {
+  const titleInput = document.querySelector(`#${type}-title-input`);
+  const amountInput = document.querySelector(`#${type}-amount-input`);
+  const result = createTransaction(type, titleInput?.value, amountInput?.value);
 
-  updateUI();
-  clearInput([incomeTitle, incomeAmount]);
-});
+  if (!result.ok) {
+    showErrors(result.errors);
+    return;
+  }
 
-incomeList.addEventListener("click", deleteOrEdit);
-expenseList.addEventListener("click", deleteOrEdit);
-allList.addEventListener("click", deleteOrEdit);
+  if (state.editingId) {
+    state.transactions = removeTransaction(state.transactions, state.editingId);
+    state.editingId = null;
+  }
 
-// HELEPER FUNCS
-function deleteOrEdit(event) {
-  const targetBtn = event.target;
-  const entry = targetBtn.parentNode;
+  state.transactions = addTransaction(state.transactions, result.transaction);
+  saveTransactions(state.transactions);
+  clearInput([titleInput, amountInput]);
+  clearMessage(els.errorRegion);
+  render();
+  announce(t(state.language, "transactionAdded"));
+}
 
-  if (targetBtn.id == EDIT) {
-    editEntry(entry);
-  } else if (targetBtn.id == DELETE) {
-    deleteEntry(entry);
+function handleListAction(event) {
+  const button = event.target.closest("button[data-action]");
+  if (!button) return;
+
+  const id = button.closest("[data-transaction-id]")?.dataset.transactionId;
+  const transaction = state.transactions.find((item) => item.id === id);
+  if (!transaction) return;
+
+  if (button.dataset.action === "delete") {
+    state.transactions = removeTransaction(state.transactions, id);
+    saveTransactions(state.transactions);
+    render();
+    announce(t(state.language, "transactionRemoved"));
+  }
+
+  if (button.dataset.action === "edit") {
+    moveTransactionToForm(transaction);
   }
 }
 
-function deleteEntry(entry) {
-  ENTRY_LIST.splice(entry.id, 1);
-  updateUI();
+function moveTransactionToForm(transaction) {
+  const titleInput = document.querySelector(`#${transaction.type}-title-input`);
+  const amountInput = document.querySelector(`#${transaction.type}-amount-input`);
+
+  showPanel(transaction.type);
+  if (titleInput) titleInput.value = transaction.title;
+  if (amountInput) amountInput.value = transaction.amount;
+  state.editingId = transaction.id;
+  announce(t(state.language, "editingTransaction"));
 }
 
-function editEntry(entry) {
-  const ENTRY = ENTRY_LIST[entry.id];
+function render() {
+  const totals = calculateTotals(state.transactions);
+  const locale = state.language === "zh" ? "zh-CN" : "en-US";
 
-  if (ENTRY.type == "income") {
-    incomeTitle.value = ENTRY.title;
-    incomeAmount.value = ENTRY.amount;
-  } else if (ENTRY.type == "expense") {
-    expenseTitle.value = ENTRY.title;
-    expenseAmount.value = ENTRY.amount;
+  els.balance.textContent = formatCurrency(totals.balance, locale, "USD");
+  els.incomeTotal.textContent = formatCurrency(totals.income, locale, "USD");
+  els.expenseTotal.textContent = formatCurrency(totals.expense, locale, "USD");
+
+  renderList(els.incomeList, state.transactions.filter((entry) => entry.type === "income"));
+  renderList(els.expenseList, state.transactions.filter((entry) => entry.type === "expense"));
+  renderList(els.allList, state.transactions);
+  updateChart(totals.income, totals.expense);
+}
+
+function renderList(list, transactions) {
+  if (!list) return;
+
+  list.innerHTML = "";
+
+  if (transactions.length === 0) {
+    const emptyItem = document.createElement("li");
+    emptyItem.className = "empty-state";
+    emptyItem.textContent = t(state.language, "noTransactions");
+    list.appendChild(emptyItem);
+    return;
   }
-  deleteEntry(entry);
+
+  transactions
+    .slice()
+    .reverse()
+    .forEach((transaction) => {
+      list.appendChild(createTransactionElement(transaction));
+    });
 }
 
-function updateUI() {
-  income = calculateTotal("income", ENTRY_LIST);
-  outcome = calculateTotal("expense", ENTRY_LIST);
-  balance = Math.abs(calculateBalance(income, outcome));
+function createTransactionElement(transaction) {
+  const item = document.createElement("li");
+  item.className = transaction.type;
+  item.dataset.transactionId = transaction.id;
 
-  let sign = income >= outcome ? "$" : "-$";
+  const entry = document.createElement("span");
+  entry.className = "entry";
+  entry.textContent = `${t(state.language, `type${capitalize(transaction.type)}`)}: ${
+    transaction.title
+  } - ${formatCurrency(transaction.amount, state.language === "zh" ? "zh-CN" : "en-US", "USD")}`;
 
-  //UPDATE UI
-  balanceEl.innerHTML = `<small>${sign}</small>${balance}`;
-  outcomeTotalEl.innerHTML = `<small>$</small>${outcome}`;
-  incomeTotalEl.innerHTML = `<small>$</small>${income}`;
+  const actions = document.createElement("span");
+  actions.className = "entry-actions";
 
-  clearElement([expenseList, incomeList, allList]);
+  actions.append(
+    createIconButton("edit", t(state.language, "edit")),
+    createIconButton("delete", t(state.language, "delete"))
+  );
+  item.append(entry, actions);
+  return item;
+}
 
-  ENTRY_LIST.forEach((entry, index) => {
-    if (entry.type == "expense") {
-      showEntry(expenseList, entry.type, entry.title, entry.amount, index);
-    } else if (entry.type == "income") {
-      showEntry(incomeList, entry.type, entry.title, entry.amount, index);
-    }
-    showEntry(allList, entry.type, entry.title, entry.amount, index);
+function createIconButton(action, label) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = `icon-button ${action}-button`;
+  button.dataset.action = action;
+  button.setAttribute("aria-label", label);
+  button.title = label;
+  return button;
+}
+
+function showPanel(panelId) {
+  [els.expensePanel, els.incomePanel, els.allPanel].forEach((panel) => {
+    panel?.classList.toggle("hide", panel.id !== panelId);
   });
-  updateChart(income, outcome);
-  localStorage.setItem("entry_list", JSON.stringify(ENTRY_LIST));
-}
 
-function showEntry(list, type, title, amount, id) {
-  const entry = `<li id="${id}" class="${type}">
-                    <div class="entry">${title} : $${amount}</div>
-                    <div id="edit"></div>
-                    <div id="delete"></div>
-                  </li>`;
-  const position = "afterbegin";
-  list.insertAdjacentHTML(position, entry);
-}
-
-function clearElement(elements) {
-  elements.forEach((element) => {
-    element.innerHTML = "";
+  els.tabButtons.forEach((button) => {
+    const isActive = button.dataset.tabTarget === panelId;
+    button.classList.toggle("focus", isActive);
+    button.setAttribute("aria-selected", String(isActive));
   });
 }
 
-function calculateTotal(type, list) {
-  let sum = 0;
-  list.forEach((entry) => {
-    if (entry.type == type) {
-      sum += entry.amount;
-    }
+function applyLanguage() {
+  document.documentElement.lang = state.language === "zh" ? "zh-CN" : "en";
+  if (els.languageSelect) els.languageSelect.value = state.language;
+
+  document.querySelectorAll("[data-i18n]").forEach((element) => {
+    element.textContent = t(state.language, element.dataset.i18n);
   });
-  return sum;
+
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((element) => {
+    element.placeholder = t(state.language, element.dataset.i18nPlaceholder);
+  });
+
+  document.querySelectorAll("[data-i18n-label]").forEach((element) => {
+    element.setAttribute("aria-label", t(state.language, element.dataset.i18nLabel));
+  });
+
+  document.title = t(state.language, "appName");
 }
 
-function calculateBalance(income, outcome) {
-  return income - outcome;
+function setupCookieBanner() {
+  if (!els.cookieBanner || hasCookieConsent()) {
+    els.cookieBanner?.classList.add("hide");
+    return;
+  }
+
+  els.cookieBanner.classList.remove("hide");
 }
+
+function showErrors(errors) {
+  const messages = Object.values(errors).map((key) => t(state.language, key));
+  if (els.errorRegion) {
+    els.errorRegion.textContent = messages.join(" ");
+  }
+  announce(messages.join(" "));
+}
+
+function announce(message) {
+  if (els.liveRegion) {
+    els.liveRegion.textContent = message;
+  }
+}
+
+function clearMessage(element) {
+  if (element) element.textContent = "";
+}
+
 function clearInput(inputs) {
   inputs.forEach((input) => {
-    input.value = "";
+    if (input) input.value = "";
   });
 }
 
-function show(element) {
-  element.classList.remove("hide");
-}
-
-function hide(elements) {
-  elements.forEach((element) => {
-    element.classList.add("hide");
-  });
-}
-
-function active(element) {
-  element.classList.add("focus");
-}
-function inactive(elements) {
-  elements.forEach((element) => {
-    element.classList.remove("focus");
-  });
+function capitalize(value) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }

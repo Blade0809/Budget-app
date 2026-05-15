@@ -1,5 +1,7 @@
 # Budget App Coursework Enhancement
 
+[![codecov](https://codecov.io/github/Blade0809/Budget-app/graph/badge.svg?token=VNME1IWRQG)](https://codecov.io/github/Blade0809/Budget-app)
+
 This is a vanilla HTML/CSS/JavaScript budget management app enhanced for CPT304 Software Engineering 2. It keeps the original income, expense, balance, list, edit, delete, and chart workflow, while adding maintainability, accessibility, privacy, persistence, internationalisation, and automated tests.
 
 ## Features

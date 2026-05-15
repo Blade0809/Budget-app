@@ -1,2 +1,2 @@
 Vercel production URL:
-[Replace this with the final Vercel deployment URL after deployment]
+https://budget-app-kohl-seven.vercel.app
